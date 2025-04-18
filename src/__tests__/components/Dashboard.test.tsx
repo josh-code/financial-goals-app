@@ -4,18 +4,28 @@ import Dashboard from '../../components/Dashboard';
 describe('Dashboard', () => {
   const mockBuckets = [
     {
-      id: '1',
+      _id: '1',
       name: 'Retirement',
       targetAmount: 1000000,
       currentAmount: 500000,
       monthlyContribution: 5000,
+      description: 'Retirement savings',
+      returnRate: 8,
+      timeline: 20,
+      sipIncrease: 5,
+      userId: 'user1',
     },
     {
-      id: '2',
+      _id: '2',
       name: 'House',
       targetAmount: 500000,
       currentAmount: 100000,
       monthlyContribution: 3000,
+      description: 'House down payment',
+      returnRate: 7,
+      timeline: 10,
+      sipIncrease: 3,
+      userId: 'user1',
     },
   ];
 

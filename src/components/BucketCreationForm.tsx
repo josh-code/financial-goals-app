@@ -20,16 +20,24 @@ type BucketFormData = z.infer<typeof bucketSchema>;
 
 interface BucketCreationFormProps {
   onSubmit: (bucket: {
-    id: string;
     name: string;
+    description?: string;
     targetAmount: number;
     currentAmount: number;
     monthlyContribution: number;
-  }) => void;
+    returnRate: number;
+    timeline: number;
+    sipIncrease: number;
+  }) => Promise<void>;
   onCancel: () => void;
+  isSubmitting?: boolean;
 }
 
-export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreationFormProps) {
+export default function BucketCreationForm({
+  onSubmit,
+  onCancel,
+  isSubmitting = false,
+}: BucketCreationFormProps) {
   const [calculatedSIP, setCalculatedSIP] = useState<number | null>(null);
 
   const {
@@ -40,25 +48,34 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
     resolver: zodResolver(bucketSchema),
   });
 
-  const handleFormSubmit = (data: BucketFormData) => {
-    const result = calculateSIP({
-      goalAmount: data.goalAmount,
-      timeline: data.timeline,
-      returnRate: data.returnRate,
-      sipIncrease: data.sipIncrease,
-      initialLumpsum: data.initialLumpsum,
-    });
+  const handleFormSubmit = async (data: BucketFormData) => {
+    try {
+      console.log('Form data:', data);
+      const result = calculateSIP({
+        goalAmount: data.goalAmount,
+        timeline: data.timeline,
+        returnRate: data.returnRate,
+        sipIncrease: data.sipIncrease,
+        initialLumpsum: data.initialLumpsum,
+      });
 
-    setCalculatedSIP(result.monthlyAmount);
+      console.log('SIP calculation result:', result);
+      setCalculatedSIP(result.monthlyAmount);
 
-    // Create a new bucket
-    onSubmit({
-      id: Math.random().toString(36).substr(2, 9),
-      name: data.name,
-      targetAmount: data.goalAmount,
-      currentAmount: data.initialLumpsum,
-      monthlyContribution: result.monthlyAmount,
-    });
+      await onSubmit({
+        name: data.name,
+        description: data.description,
+        targetAmount: data.goalAmount,
+        currentAmount: data.initialLumpsum,
+        monthlyContribution: result.monthlyAmount,
+        returnRate: data.returnRate,
+        timeline: data.timeline,
+        sipIncrease: data.sipIncrease,
+      });
+    } catch (error) {
+      console.error('Error submitting form:', error);
+      // You might want to show an error message to the user here
+    }
   };
 
   return (
@@ -71,7 +88,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
           type="text"
           id="name"
           {...register('name')}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.name && (
           <p className="mt-1 text-sm text-red-600">{errors.name.message}</p>
@@ -85,7 +103,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
         <textarea
           id="description"
           {...register('description')}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
       </div>
 
@@ -97,7 +116,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
           type="number"
           id="goalAmount"
           {...register('goalAmount', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.goalAmount && (
           <p className="mt-1 text-sm text-red-600">{errors.goalAmount.message}</p>
@@ -112,7 +132,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
           type="number"
           id="timeline"
           {...register('timeline', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.timeline && (
           <p className="mt-1 text-sm text-red-600">{errors.timeline.message}</p>
@@ -127,7 +148,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
           type="number"
           id="returnRate"
           {...register('returnRate', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.returnRate && (
           <p className="mt-1 text-sm text-red-600">{errors.returnRate.message}</p>
@@ -142,7 +164,8 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
           type="number"
           id="sipIncrease"
           {...register('sipIncrease', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.sipIncrease && (
           <p className="mt-1 text-sm text-red-600">{errors.sipIncrease.message}</p>
@@ -151,42 +174,44 @@ export default function BucketCreationForm({ onSubmit, onCancel }: BucketCreatio
 
       <div>
         <label htmlFor="initialLumpsum" className="block text-sm font-medium text-gray-700">
-          Initial Lumpsum (optional)
+          Initial Investment
         </label>
         <input
           type="number"
           id="initialLumpsum"
           {...register('initialLumpsum', { valueAsNumber: true })}
-          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500"
+          className="mt-1 block w-full rounded-md border-gray-300 shadow-sm focus:border-indigo-500 focus:ring-indigo-500 sm:text-sm"
+          disabled={isSubmitting}
         />
         {errors.initialLumpsum && (
           <p className="mt-1 text-sm text-red-600">{errors.initialLumpsum.message}</p>
         )}
       </div>
 
+      {calculatedSIP && (
+        <div className="bg-blue-50 border border-blue-200 text-blue-700 px-4 py-3 rounded">
+          <p className="font-medium">Required Monthly Investment:</p>
+          <p className="text-2xl font-bold">₹{calculatedSIP.toLocaleString()}</p>
+        </div>
+      )}
+
       <div className="flex justify-end space-x-4">
         <button
           type="button"
           onClick={onCancel}
-          className="inline-flex justify-center rounded-md border border-gray-300 bg-white py-2 px-4 text-sm font-medium text-gray-700 shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          disabled={isSubmitting}
         >
           Cancel
         </button>
         <button
           type="submit"
-          className="inline-flex justify-center rounded-md border border-transparent bg-indigo-600 py-2 px-4 text-sm font-medium text-white shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-indigo-500 focus:ring-offset-2"
+          className="px-4 py-2 text-sm font-medium text-white bg-indigo-600 border border-transparent rounded-md shadow-sm hover:bg-indigo-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          disabled={isSubmitting}
         >
-          Create Bucket
+          {isSubmitting ? 'Creating...' : 'Create Bucket'}
         </button>
       </div>
-
-      {calculatedSIP && (
-        <div className="mt-4 p-4 bg-green-50 rounded-md">
-          <p className="text-green-700">
-            Required Monthly SIP: ₹{calculatedSIP.toLocaleString()}
-          </p>
-        </div>
-      )}
     </form>
   );
 } 

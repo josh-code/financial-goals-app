@@ -3,14 +3,7 @@
 import { Card, CardContent, CardHeader, CardTitle } from '@/components/ui/card';
 import { Progress } from '@/components/ui/progress';
 import { formatCurrency } from '@/utils/financial-calculations';
-
-interface Bucket {
-  id: string;
-  name: string;
-  targetAmount: number;
-  currentAmount: number;
-  monthlyContribution: number;
-}
+import { Bucket } from '@/types/bucket';
 
 interface DashboardProps {
   buckets: Bucket[];
